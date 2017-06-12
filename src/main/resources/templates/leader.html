@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Title</title>
+</head>
+<body>
+<div>
+    <div>
+        <button id="connect" onclick="connect();">连接</button>
+        <button id="disconnect" disabled="disabled" onclick="disconnect();">断开连接</button>
+    </div>
+    <div id="conversationDiv">
+    </div>
+</div>
+<script src="/webjars/jquery/3.1.0/jquery.min.js" th:src="@{/webjars/jquery/3.1.0/jquery.min.js}"></script>
+<script src="/webjars/stomp-websocket/2.3.4/lib/stomp.min.js" th:src="@{/webjars/stomp-websocket/2.3.4/lib/stomp.min.js}"></script>
+<script src="//cdn.sockjs.org/sockjs-0.3.min.js"></script>
+<script>
+    var stompClient = null;
+    function setConnected(connected) {
+        document.getElementById("connect").disabled = connected;
+        document.getElementById("disconnect").disabled = !connected;
+        document.getElementById("conversationDiv").style.visibility = connected ? 'visible' : 'hidden';
+        $("#response").html();
+    }
+    function connect() {
+        var socket = new SockJS('/endpoint');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            setConnected(true);
+            console.log('Connected:' + frame);
+            stompClient.subscribe('/topic/getResponse', function (response) {
+                console.log(response)
+                showResponse(JSON.parse(response.body));
+            })
+        });
+    }
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        setConnected(false);
+        console.log('Disconnected');
+    }
+    function showResponse(message) { //"{"respCode":200,"respData":"Hello,11"}"
+        $("#conversationDiv").append('<p class="message">'+message.respData+'</p>');
+    }
+</script>
+</body>
+</html>
